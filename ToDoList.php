@@ -1,60 +1,37 @@
 <?php
 
+use EmailSenderService\EmailSenderService;
+
 class ToDoList {
+  private $items = array();
+  private $lastItemDate = 0;
+  private $user;
+  private $emailSenderService;
 
-  private string $content;
-  private Carbon $date_creation;
-//   private $email;
-//   private $firstname;
-//   private $lastname;
-//   private $password;
-//   private $birthdate;
+  public function __construct(User $user, EmailSenderService $emailSenderService) {
+    $this->user = $user;
+    $this->emailSenderService = $emailSenderService;
+  }
 
-//   function __construct($email, $firstname, $lastname, $password, $birthdate) {
-//     $this->email = $email;
-//     $this->firstname = $firstname;
-//     $this->lastname = $lastname;
-//     $this->password = $password;
-//     $this->birthdate = $birthdate;
-//   }
+  public function add(Item $item) {
+    if ($this->user->isValid() && count($this->items) < 10 && (time() - $this->lastItemDate) >= 1800) {
+      // Vérifier si l'item a déjà été ajouté
+      foreach ($this->items as $existingItem) {
+        if ($existingItem->getName() === $item->getName()) {
+          throw new Exception('Un item avec ce nom existe déjà.');
+        }
+      }
 
-//   public function isValid() {
-//     if(!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
-//       return false;
-//     }
+      $this->items[] = $item;
+      $this->lastItemDate = time();
 
-//     if(strlen($this->password) < 8 || strlen($this->password) > 40) {
-//       return false;
-//     }
-
-//     if(!preg_match('/[a-z]/', $this->password) || !preg_match('/[A-Z]/', $this->password) || !preg_match('/[0-9]/', $this->password)) {
-//       return false;
-//     }
-
-//     $birthdate = new DateTime($this->birthdate);
-//     $today = new DateTime();
-//     $age = $today->diff($birthdate)->y;
-
-//     if($age < 13) {
-//       return false;
-//     }
-
-//     return true;
-//   }
-// }
-
-// $email = "user@example.com";
-// $firstname = "Dupont";
-// $lastname = "Nicolas";
-// $password = "Password1";
-// $birthdate = "1990-01-01";
-
-// $user = new User($email, $firstname, $lastname, $password, $birthdate);
-
-// if($user->isValid()) {
-//   // Créer la ToDoList pour l'utilisateur
-//   echo "Utilisateur valide. La ToDoList peut être créée.";
-// } else {
-//   echo "L'utilisateur n'est pas valide. La ToDoList ne peut pas être créée.";
+      if (count($this->items) === 8) {
+        $this->emailSenderService->send($this->user->getEmail(), 'Limite d\'items atteinte', 'Vous ne pouvez plus ajouter que 2 items à votre ToDoList.');
+      }
+    } else {
+      throw new Exception('Impossible d\'ajouter un item à cette ToDoList.');
+    }
+  }
 }
+
 ?>

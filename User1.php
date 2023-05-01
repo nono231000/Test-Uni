@@ -2,7 +2,7 @@
 
 
 use Carbon\Carbon;
-class User
+class User1
 {
     private string $email;
     private string $fname;
